@@ -42,7 +42,7 @@ def expired_token_response(callback):
     return jsonify({"message": "Token de autenticação expirado"}), 401
 
 # Rota de teste
-@app.route('/')
+@app.route('/api')
 def home():
     return "Bem-vindo à API de Gestão de Frota!"
 

@@ -5,6 +5,7 @@ from datetime import datetime
 
 fleet_bp = Blueprint('fleet', __name__)
 
+
 @fleet_bp.route('/registros_saida', methods=['POST'])
 def register_departure_public():
     """
@@ -140,3 +141,7 @@ def get_total_value_exits_route():
 
     total_value = FleetService.get_total_value_exits_by_period(start_date, end_date)
     return jsonify({"total_valor_saidas": total_value}), 200
+
+@fleet_bp.route('/teste', methods=['GET']) # AGORA ESTÁ CORRETO: methods=['GET']
+def test_res():
+    return jsonify({'msg': 'requisição get funcionando'})

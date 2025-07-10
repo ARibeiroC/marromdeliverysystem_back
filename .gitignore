@@ -1,0 +1,47 @@
+# Arquivos de bytecode Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Ambientes virtuais
+venv/
+.venv/
+env/
+.env/
+
+# Logs
+*.log
+
+
+# Arquivos de configuração de IDEs e editores
+.vscode/        # VS Code
+.idea/          # PyCharm
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de cache e temporários
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store       # macOS
+Thumbs.db       # Windows
+
+# Variáveis de ambiente (MUITO IMPORTANTE: NUNCA versionar segredos!)
+.env
+.flaskenv
+
+# Arquivos de upload de usuários (se o aplicativo permitir uploads)
+/uploads/
+
+# Dependências do Python (geradas pelo pip)
+# Não versionar a pasta de pacotes instalados
+# node_modules/ # Se você tiver um frontend Node.js na mesma pasta, descomente esta linha
+
+# Arquivos de build de frontend (se houver um frontend na mesma pasta)
+# build/
+# dist/
+
+# Arquivos específicos do Render ou de deploy (se gerados localmente e não forem para o Git)
+# render.yaml # Se você versionar seu render.yaml, não ignore esta linha

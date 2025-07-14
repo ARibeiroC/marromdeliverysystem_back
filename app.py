@@ -44,7 +44,7 @@ def expired_token_response(callback):
 # Rota de teste
 @app.route('/')
 def home():
-    return "Bem-vindo à API de Gestão de Frota!"
+    return jsonify({'msg': "Bem-vindo à API de Gestão de Frota!"})
 
 # Função para criar um usuário gestor inicial (apenas para setup/teste)
 @app.cli.command('create-initial-user')

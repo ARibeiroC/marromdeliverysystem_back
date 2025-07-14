@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from services.auth_service import AuthService
+from werkzeug.security import check_password_hash, generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -19,6 +20,6 @@ def login():
     access_token = AuthService.authenticate_user(username, password)
 
     if access_token:
-        return jsonify(access_token=access_token), 200
+        return jsonify(access_token=generate_password_hash(access_token)), 200
     else:
         return jsonify({"message": "Credenciais inválidas"}), 401

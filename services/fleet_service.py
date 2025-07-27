@@ -12,7 +12,7 @@ from models.models import (
 
 
 class FleetService:
-    FIXED_COD_SAIDA_VALOR = "SV001"
+    FIXED_COD_SAIDA_VALOR = "SAIDA_PADRAO" # <--- ALtere este valor para o código fixo desejado
 
     @staticmethod
     def register_departure(nome_do_motorista, placa_do_veiculo, timestamp_saida=None):
@@ -85,3 +85,15 @@ class FleetService:
         except Exception as e:
             print(f"Erro ao buscar registros de saída por período: {e}")
             return []
+
+    @staticmethod
+    def get_total_departure_records():
+        """
+        Retorna o número total de registros de saída na coleção.
+        """
+        departure_records_collection = get_departure_records_collection()
+        try:
+            return departure_records_collection.count_documents({}) # Conta todos os documentos
+        except Exception as e:
+            print(f"Erro ao contar o total de registros de saída: {e}")
+            return 0

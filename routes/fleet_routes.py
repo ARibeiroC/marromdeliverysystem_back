@@ -16,10 +16,9 @@ def register_departure_public():
     data = request.get_json()
     nome_do_motorista = data.get('nome_do_motorista')
     placa_do_veiculo = data.get('placa_do_veiculo')
-    # REMOVIDO: cod_saida_valor não é mais recebido da requisição
     timestamp_saida_str = data.get('timestamp_saida')
 
-    if not nome_do_motorista or not placa_do_veiculo: # CORRIGIDO: Validação sem cod_saida_valor
+    if not nome_do_motorista or not placa_do_veiculo:
         return jsonify({"message": "Nome do motorista e placa do veículo são obrigatórios"}), 400
 
     timestamp_saida = None
@@ -29,7 +28,6 @@ def register_departure_public():
         except ValueError:
             return jsonify({"message": "Formato de data e hora inválido. Use ISO 8601 (YYYY-MM-DDTHH:MM:SS)."}), 400
 
-    # CORRIGIDO: Chamada ao serviço sem cod_saida_valor
     response, status_code = FleetService.register_departure(
         nome_do_motorista, placa_do_veiculo, timestamp_saida
     )
@@ -77,3 +75,12 @@ def get_departure_records_by_period_route():
     print(f"Buscando registros entre {start_date} e {end_date}")
     records = FleetService.get_departure_records_by_period(start_date, end_date)
     return jsonify(records), 200
+
+@fleet_bp.route('/registros_saida/total', methods=['GET']) # NOVA ROTA
+@jwt_required() # Protegida: requer autenticação
+def get_total_departure_records_route():
+    """
+    Rota protegida para obter o número total de registros de saída.
+    """
+    total_records = FleetService.get_total_departure_records()
+    return jsonify({"total_saidas": total_records}), 200

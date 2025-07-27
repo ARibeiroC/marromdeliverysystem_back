@@ -1,11 +1,11 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_jwt_extended import JWTManager
-from config import Config
+from config.config import Config
 from routes.auth_routes import auth_bp
 from routes.fleet_routes import fleet_bp
-from database import get_users_collection # Importar para criar usuário inicial
-from models import create_user_document # Importar para criar usuário inicial
+from database.database import get_users_collection # Importar para criar usuário inicial
+from models.models import create_user_document # Importar para criar usuário inicial
 from werkzeug.security import generate_password_hash # Importar para criar usuário inicial
 from dotenv import load_dotenv # Importar para carregar variáveis de ambiente
 from flask_cors import CORS # Importar Flask-CORS
@@ -18,11 +18,12 @@ load_dotenv()
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Inicializa Flask-CORS
+CORS(app) # Permite CORS para todas as rotas e origens (apenas para desenvolvimento)
+
 # Inicializa Flask-JWT-Extended
 jwt = JWTManager(app)
 
-# Inicializa Flask-CORS
-CORS(app) # Permite CORS para todas as rotas e origens (apenas para desenvolvimento)
 
 # Registra os Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
@@ -38,21 +39,21 @@ def invalid_token_response(callback):
     return jsonify({"message": "Token de autenticação inválido"}), 401
 
 @jwt.expired_token_loader
-def expired_token_response(callback):
+def expired_token_response(jwt_header, jwt_payload):
     return jsonify({"message": "Token de autenticação expirado"}), 401
 
 # Rota de teste
 @app.route('/')
 def home():
-    return jsonify({'msg': "Bem-vindo à API de Gestão de Frota!"})
+    return render_template('doc.html')
 
 # Função para criar um usuário gestor inicial (apenas para setup/teste)
 @app.cli.command('create-initial-user')
 def create_initial_user():
     """Cria um usuário gestor inicial no banco de dados."""
     users_collection = get_users_collection()
-    username = os.environ.get('INITIAL_ADMIN_USERNAME', 'admin')
-    password = os.environ.get('INITIAL_ADMIN_PASSWORD', 'adminpass')
+    username = os.environ.get('INITIAL_ADMIN_USERNAME')
+    password = os.environ.get('INITIAL_ADMIN_PASSWORD')
 
     if users_collection.find_one({"username": username}):
         print(f"Usuário '{username}' já existe.")

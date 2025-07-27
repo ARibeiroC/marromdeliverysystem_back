@@ -1,13 +1,15 @@
 import os
-from datetime import timedelta
-import urllib.parse
+from datetime import timedelta, datetime, timezone # Importar datetime e timezone
+import urllib.parse # Importar para codificação de URL
 
 class Config:
-
+    # Chaves secretas para o Flask e JWT
     SECRET_KEY = os.environ.get('SECRET_KEY', 'sua_chave_secreta_muito_segura_padrao')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'sua_chave_secreta_jwt_muito_segura_padrao')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1) # Token expira em 1 hora
 
+
+    # Configurações do MongoDB
+    # Construindo a URI do MongoDB a partir das variáveis de ambiente
     MONGO_USER = os.environ.get('USER')
     MONGO_PASS = os.environ.get('PASS')
     MONGO_PORT = os.environ.get('PORT')

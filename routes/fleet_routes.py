@@ -5,21 +5,22 @@ from datetime import datetime
 
 fleet_bp = Blueprint('fleet', __name__)
 
-
 @fleet_bp.route('/registros_saida', methods=['POST'])
 def register_departure_public():
     """
     Rota pública para registrar uma saída de veículo.
     Acessível por motoristas sem autenticação.
+    Espera 'nome_do_motorista' e 'placa_do_veiculo'.
+    O 'cod_saida_valor' será fixo no backend.
     """
     data = request.get_json()
-    motorista_id = data.get('motorista_id')
-    veiculo_id = data.get('veiculo_id')
-    observacoes = data.get('observacoes')
+    nome_do_motorista = data.get('nome_do_motorista')
+    placa_do_veiculo = data.get('placa_do_veiculo')
+    # REMOVIDO: cod_saida_valor não é mais recebido da requisição
     timestamp_saida_str = data.get('timestamp_saida')
 
-    if not motorista_id or not veiculo_id:
-        return jsonify({"message": "ID do motorista e do veículo são obrigatórios"}), 400
+    if not nome_do_motorista or not placa_do_veiculo: # CORRIGIDO: Validação sem cod_saida_valor
+        return jsonify({"message": "Nome do motorista e placa do veículo são obrigatórios"}), 400
 
     timestamp_saida = None
     if timestamp_saida_str:
@@ -28,104 +29,38 @@ def register_departure_public():
         except ValueError:
             return jsonify({"message": "Formato de data e hora inválido. Use ISO 8601 (YYYY-MM-DDTHH:MM:SS)."}), 400
 
-    response, status_code = FleetService.register_departure(motorista_id, veiculo_id, observacoes, timestamp_saida)
-    return jsonify(response), status_code
-
-@fleet_bp.route('/veiculos/<string:veiculo_id>/saidas_semanais', methods=['GET'])
-@jwt_required() # Protegida: requer autenticação
-def get_vehicle_weekly_departures(veiculo_id):
-    """
-    Rota protegida para obter o número de saídas semanais de um veículo específico.
-    """
-    data_str = request.args.get('data')
-    data_referencia = datetime.utcnow() # Padrão para a semana atual
-    if data_str:
-        try:
-            data_referencia = datetime.strptime(data_str, '%Y-%m-%d')
-        except ValueError:
-            return jsonify({"message": "Formato de data inválido. Use YYYY-MM-DD."}), 400
-
-    weekly_count = FleetService.count_weekly_departures(veiculo_id, data_referencia)
-    return jsonify({
-        "veiculo_id": veiculo_id,
-        "saidas_semanais": weekly_count
-    }), 200
-
-@fleet_bp.route('/frota/saidas_semanais', methods=['GET'])
-@jwt_required() # Protegida: requer autenticação
-def get_fleet_weekly_departures_route():
-    """
-    Rota protegida para obter o número de saídas semanais para toda a frota.
-    """
-    data_str = request.args.get('data')
-    data_referencia = datetime.utcnow() # Padrão para a semana atual
-    if data_str:
-        try:
-            data_referencia = datetime.strptime(data_str, '%Y-%m-%d')
-        except ValueError:
-            return jsonify({"message": "Formato de data inválido. Use YYYY-MM-DD."}), 400
-
-    fleet_departures = FleetService.get_fleet_weekly_departures(data_referencia)
-    return jsonify(fleet_departures), 200
-
-@fleet_bp.route('/veiculos', methods=['POST'])
-@jwt_required() # Protegida: requer autenticação
-def add_vehicle_route():
-    """
-    Rota protegida para adicionar um novo veículo.
-    """
-    data = request.get_json()
-    cod = data.get('cod')
-    placa = data.get('placa')
-    modelo = data.get('modelo')
-    ano = data.get('ano')
-
-    if not cod or not placa or not modelo:
-        return jsonify({"message": "Código, placa e modelo do veículo são obrigatórios"}), 400
-
-    response, status_code = FleetService.add_vehicle(cod, placa, modelo, ano)
-    return jsonify(response), status_code
-
-@fleet_bp.route('/motoristas', methods=['POST'])
-@jwt_required() # Protegida: requer autenticação
-def add_driver_route():
-    """
-    Rota protegida para adicionar um novo motorista.
-    """
-    data = request.get_json()
-    cod = data.get('cod')
-    nome_completo = data.get('nome_completo')
-    numero_cnh = data.get('numero_cnh')
-
-    if not cod or not nome_completo or not numero_cnh:
-        return jsonify({"message": "Código, nome completo e número da CNH do motorista são obrigatórios"}), 400
-
-    response, status_code = FleetService.add_driver(cod, nome_completo, numero_cnh)
+    # CORRIGIDO: Chamada ao serviço sem cod_saida_valor
+    response, status_code = FleetService.register_departure(
+        nome_do_motorista, placa_do_veiculo, timestamp_saida
+    )
     return jsonify(response), status_code
 
 @fleet_bp.route('/saidas_valor', methods=['POST'])
 @jwt_required() # Protegida: requer autenticação
 def add_value_exit_route():
     """
-    Rota protegida para registrar um novo valor de saída.
+    Rota protegida para registrar um novo valor de saída (documento Saida).
+    Espera 'cod' e 'valor_atual'.
     """
     data = request.get_json()
     cod = data.get('cod')
-    valor_saida = data.get('valor_saida')
+    valor_atual = data.get('valor_atual')
 
-    if not cod or valor_saida is None:
-        return jsonify({"message": "Código e valor da saída são obrigatórios"}), 400
-    if not isinstance(valor_saida, (int, float)):
-        return jsonify({"message": "Valor da saída deve ser um número"}), 400
+    if not cod or valor_atual is None:
+        return jsonify({"message": "Código e valor atual são obrigatórios"}), 400
+    if not isinstance(valor_atual, (int, float)):
+        return jsonify({"message": "Valor atual deve ser um número"}), 400
 
-    response, status_code = FleetService.add_value_exit(cod, valor_saida)
+    response, status_code = FleetService.add_value_exit(cod, valor_atual)
     return jsonify(response), status_code
 
-@fleet_bp.route('/saidas_valor/total', methods=['GET'])
+@fleet_bp.route('/registros_saida/periodo', methods=['GET'])
 @jwt_required() # Protegida: requer autenticação
-def get_total_value_exits_route():
+def get_departure_records_by_period_route():
     """
-    Rota protegida para obter a somatória dos valores de saída em um período.
+    Rota protegida para obter todos os registros de saída em um período especificado.
+    Espera os parâmetros de query 'start_date' e 'end_date' no formato YYYY-MM-DD.
+    Exemplo de requisição: /api/v1/registros_saida/periodo?start_date=2024-06-01&end_date=2024-06-30
     """
     start_date_str = request.args.get('start_date')
     end_date_str = request.args.get('end_date')
@@ -139,9 +74,6 @@ def get_total_value_exits_route():
     except ValueError:
         return jsonify({"message": "Formato de data inválido. Use YYYY-MM-DD."}), 400
 
-    total_value = FleetService.get_total_value_exits_by_period(start_date, end_date)
-    return jsonify({"total_valor_saidas": total_value}), 200
-
-@fleet_bp.route('/teste', methods=['GET']) # AGORA ESTÁ CORRETO: methods=['GET']
-def test_res():
-    return jsonify({'msg': 'requisição get funcionando'})
+    print(f"Buscando registros entre {start_date} e {end_date}")
+    records = FleetService.get_departure_records_by_period(start_date, end_date)
+    return jsonify(records), 200

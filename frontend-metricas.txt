@@ -1,0 +1,91 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { MyRequest } from '../../hooks/useFetch';
+import { useAuth } from '../../context/AuthContext'; // Para verificar o login e papel
+import './style.css'; // Estilo para este componente
+
+// Lógica para determinar a URI da API
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const uri = isLocalhost ? 'http://127.0.0.1:5000/' : import.meta.env.VITE_API_URL;
+
+const req = new MyRequest();
+
+export function UsageMetrics() {
+    const [dailyCounts, setDailyCounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+    const { isLoggedIn } = useAuth(); // Obter o status de login do contexto
+
+    useEffect(() => {
+        const fetchUsageMetrics = async () => {
+            setLoading(true);
+            setError('');
+
+            const token = sessionStorage.getItem('access_token');
+
+            if (!token) {
+                navigate('/delivery/admin'); // Redireciona para login se não houver token
+                return;
+            }
+
+            try {
+                // A rota de métricas é protegida e requer um token de superadmin
+                const data = await req.getAll(`${uri}api/v1/admin/usage_counts/daily`, token);
+                setDailyCounts(data);
+            } catch (err) {
+                console.error('Erro ao buscar métricas de uso:', err);
+                if (err.status === 401 || err.status === 403) {
+                    sessionStorage.removeItem('access_token'); // Remove token inválido/expirado
+                    navigate('/delivery/admin'); // Redireciona para login
+                    setError('Acesso não autorizado ou sessão expirada. Faça login como superadministrador.');
+                } else {
+                    setError(`Erro ao carregar métricas: ${err.message || 'Erro desconhecido'}`);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Verifica se o usuário está logado antes de tentar buscar as métricas
+        // O `AuthContext` já lida com a verificação de token na inicialização.
+        // A autorização de superadmin é verificada no backend.
+        if (isLoggedIn) {
+            fetchUsageMetrics();
+        } else {
+            setLoading(false); // Se não estiver logado, não precisa carregar
+            navigate('/delivery/admin'); // Redireciona para login
+        }
+    }, [isLoggedIn, navigate]); // Depende de isLoggedIn para re-executar se o status de login mudar
+
+    if (loading) {
+        return <div className="usage-metrics-container"><p>Carregando métricas...</p></div>;
+    }
+
+    if (error) {
+        return <div className="usage-metrics-container"><p className="error-message">{error}</p></div>;
+    }
+
+    return (
+        <div className="usage-metrics-container">
+            <h2 className="page-title">Métricas de Uso Diário</h2>
+            {dailyCounts.length > 0 ? (
+                <ul className="metrics-list">
+                    {dailyCounts.map((item, index) => (
+                        <li key={index} className="metric-item">
+                            <div className="metric-header">
+                                <span className="metric-date">{new Date(item.date).toLocaleDateString()}</span>
+                                <span className="metric-type">{item.action_type.replace(/_/g, ' ').toUpperCase()}</span>
+                            </div>
+                            <div className="metric-details">
+                                <span className="metric-count">Requisições: {item.count}</span>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>Nenhuma métrica de uso encontrada.</p>
+            )}
+        </div>
+    );
+}

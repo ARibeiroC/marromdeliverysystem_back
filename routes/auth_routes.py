@@ -12,10 +12,14 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
+    password = password if password is not None else ""
+
     if not username or not password:
         return jsonify({"message": "Nome de usuário e senha são obrigatórios"}), 400
 
     access_token = AuthService.authenticate_user(username, password)
+
+    print(access_token) # Mantenha para depuração, se quiser ver o token no console do backend
     
     if access_token:
         return jsonify(access_token=access_token), 200

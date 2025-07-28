@@ -14,3 +14,7 @@ def get_value_exits_collection():
 
 def get_departure_records_collection():
     return db.registros_saida
+
+# Retorna a coleção para logs de uso
+def get_usage_logs_collection():
+    return db.usage_logs
